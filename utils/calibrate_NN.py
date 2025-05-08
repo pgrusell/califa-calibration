@@ -18,40 +18,52 @@ centroids in the same units as they are in CALIFA.
 '''
 
 import keras
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Conv1D, MaxPooling1D, Flatten, Dense, BatchNormalization, LeakyReLU, Input
 from keras.callbacks import ReduceLROnPlateau
 import numpy as np
-import matplotlib.pyplot as plt
 import tensorflow as tf
 from scipy.optimize import curve_fit
+
+@tf.keras.utils.register_keras_serializable()
+def peak_loss(y_true, y_pred):
+    sorted_true = tf.sort(y_true, axis=1)
+    sorted_pred = tf.sort(y_pred, axis=1)
+    error = sorted_true - sorted_pred
+    return tf.reduce_mean(tf.where(tf.abs(error) < 0.05,
+                                    0.5 * tf.square(error),
+                                    0.05 * (tf.abs(error) - 0.025)))
 
 
 class Calibration:
 
-    def __init__(self, x: np.ndarray, y: np.ndarray, norm: np.ndarray, epochs: int) -> None:
+    def __init__(self, x: np.ndarray = None, y: np.ndarray = None, norm: np.ndarray = None, epochs: int = 0) -> None:
+
         self.x = x
         self.y = y
-        self.y.sort(axis=1)
+
+        if np.any(self.y):
+            self.y.sort(axis=1)
+            self.n_out_neurons = len(y[0])
+
+        if np.any(self.x):
+            self.n_input_neurons = len(x[0])
+            self.bins = np.linspace(0, 1, self.n_input_neurons)
+        else:
+            self.bins = np.linspace(0, 1, 210)
+
         self.norm = norm
+        self.epochs = epochs
 
-        self.n_input_neurons = len(x[0])
-        self.n_out_neurons = len(y[0])
-        self.bins = np.linspace(0, 1, self.n_input_neurons)
+    def load_model(self, model_path: str = 'model.keras'):
+        self.model = load_model(model_path)
 
+    def make(self):
         self._build_model()
         self._build_test_set()
-        self.train_model(self.x_train, self.y_train, epochs)
+        self.train_model(self.x_train, self.y_train, self.epochs)
 
     def _build_model(self):
-        def peak_loss(y_true, y_pred):
-            sorted_true = tf.sort(y_true, axis=1)
-            sorted_pred = tf.sort(y_pred, axis=1)
-            error = sorted_true - sorted_pred
-            return tf.reduce_mean(tf.where(tf.abs(error) < 0.05,
-                                           0.5 * tf.square(error),
-                                           0.05 * (tf.abs(error) - 0.025)))
-
         model = Sequential([
             Input(shape=(self.n_input_neurons, 1)),
             Conv1D(32, kernel_size=5, padding='same'),
@@ -86,13 +98,15 @@ class Calibration:
         self.y_test = y[indxs][split_ndx:]
         self.norm_test = norm[indxs][split_ndx:]
 
-    def train_model(self, x_train: np.ndarray, y_train: np.ndarray, epochs: int):
+    def train_model(self, x_train: np.ndarray, y_train: np.ndarray, epochs: int, model_path: str = 'model.keras'):
 
         reduce_lr = ReduceLROnPlateau(
             monitor='loss', factor=0.5, patience=5, min_lr=1e-6)
 
         self.model.fit(x_train, y_train, epochs=epochs,
                        batch_size=32, callbacks=[reduce_lr])
+
+        self.model.save(model_path)
 
     def _gaussian(self, x, a, x0, sigma):
         return a * np.exp(-(x - x0)**2 / (2 * sigma**2))

@@ -7,7 +7,7 @@ import calibrate_NN
 
 class Test:
 
-    def __init__(self, calibration: calibrate_NN.Calibration, x_test: np.ndarray, y_test: np.ndarray) -> None:
+    def __init__(self, calibration: calibrate_NN.Calibration, x_test: np.ndarray, y_test: np.ndarray = None) -> None:
 
         self.calibration = calibration
         self.model = calibration.model
@@ -39,7 +39,7 @@ class Test:
         for ax in axs.flatten():
             i = np.random.randint(0, len(self.x_test))
             x = self.x_test[i]
-            y = self.y_test[i]
+            
 
             ax.plot(self.calibration.bins, x)
             ax.vlines(self.y_pred[i][0], 0, max(x),
@@ -47,13 +47,19 @@ class Test:
             ax.vlines(self.y_pred[i][1], 0, max(x),
                       linestyle='--', color='grey')
 
-            ax.vlines(y[0], 0, max(x),
-                      linestyle='--', color='green')
-            ax.vlines(y[1], 0, max(x),
-                      linestyle='--', color='red')
+            if np.any(self.y_test):
+
+                y = self.y_test[i]
+
+                ax.vlines(y[0], 0, max(x),
+                        linestyle='--', color='green')
+                ax.vlines(y[1], 0, max(x),
+                        linestyle='--', color='red')
 
             ax.set_yticks([])
             ax.set_xticks([])
+
+        plt.show()
 
     def plot_error(self) -> Figure:
         '''
@@ -73,6 +79,7 @@ class Test:
                     label=f'mean = {m_error[i]: .3f}\nstd = {std_error[i]: .3f}', edgecolor='black', alpha=0.3)
 
         ax.legend()
+        plt.show()
 
     def plot_correlation(self) -> Figure:
         '''
@@ -85,3 +92,5 @@ class Test:
         for i in [0, 1]:
             ax.hist2d(self.y_pred[:, i], self.y_test[:, i], bins=(
                 np.linspace(0, 1, 20), np.linspace(0, 1, 20)))
+        
+        plt.show()

@@ -71,9 +71,16 @@ class Unpacker:
             h_title = str(key).split(' ')[1]
 
             # if is an histogram
-            if h_title.startswith('fh1'):
+            if h_title.startswith('fh'):
 
-                crystal_id = int(h_title[23:])
+                if h_title.startswith('fh2'):
+
+                    crystal_id = int(h_title[23:])
+
+                else:
+
+                    crystal_id = int(h_title[22:])
+
 
                 # if crystal_id > 2544:
                 #   continue
@@ -162,3 +169,5 @@ class Unpacker:
             ax.vlines(self.y_data[i][1], 0, 5000, linestyle='--', color='grey')
             ax.set_yticks([], [])
             ax.set_xticks([], [])
+
+        plt.show()

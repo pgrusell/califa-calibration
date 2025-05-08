@@ -13,6 +13,7 @@ norm = u.norm
 # Create the NN
 epochs = 70
 cal = calibrate_NN.Calibration(x_data, y_data, norm, epochs)
+cal.make()
 
 # Test the NN
 test = test_NN.Test(cal, cal.x_test, cal.y_test)
