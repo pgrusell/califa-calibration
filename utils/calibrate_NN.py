@@ -19,11 +19,13 @@ centroids in the same units as they are in CALIFA.
 
 import keras
 from keras.models import Sequential, load_model
-from keras.layers import Conv1D, MaxPooling1D, Flatten, Dense, BatchNormalization, LeakyReLU, Input
+from keras.layers import Conv1D, MaxPooling1D, Flatten, Dense, BatchNormalization, LeakyReLU, Input, LSTM
 from keras.callbacks import ReduceLROnPlateau
 import numpy as np
 import tensorflow as tf
 from scipy.optimize import curve_fit
+from scipy.signal import savgol_filter
+
 
 @tf.keras.utils.register_keras_serializable()
 def peak_loss(y_true, y_pred):
@@ -31,8 +33,8 @@ def peak_loss(y_true, y_pred):
     sorted_pred = tf.sort(y_pred, axis=1)
     error = sorted_true - sorted_pred
     return tf.reduce_mean(tf.where(tf.abs(error) < 0.05,
-                                    0.5 * tf.square(error),
-                                    0.05 * (tf.abs(error) - 0.025)))
+                                   0.5 * tf.square(error),
+                                   0.05 * (tf.abs(error) - 0.025)))
 
 
 class Calibration:
@@ -70,16 +72,17 @@ class Calibration:
             BatchNormalization(),
             LeakyReLU(),
             MaxPooling1D(pool_size=2),
+            LSTM(64, return_sequences=True),
             Flatten(),
-            Dense(128), LeakyReLU(),
-            Dense(64), LeakyReLU(),
+            Dense(128), LeakyReLU(), BatchNormalization(),
+            Dense(64), LeakyReLU(), BatchNormalization(),
             Dense(2)
         ])
 
         model.compile(optimizer='adam', loss=peak_loss)
         self.model = model
 
-    def _build_test_set(self, test_rate: float = 0.2):
+    def _build_test_set(self, test_rate: float = 0.15):
         '''
         Method to split the input data set in train and test data sets
         '''
@@ -101,7 +104,7 @@ class Calibration:
     def train_model(self, x_train: np.ndarray, y_train: np.ndarray, epochs: int, model_path: str = 'model.keras'):
 
         reduce_lr = ReduceLROnPlateau(
-            monitor='loss', factor=0.5, patience=5, min_lr=1e-6)
+            monitor='loss', factor=0.1, patience=5, min_lr=1e-6)
 
         self.model.fit(x_train, y_train, epochs=epochs,
                        batch_size=32, callbacks=[reduce_lr])
@@ -119,6 +122,9 @@ class Calibration:
         mask = (x > pred_pos - window) & (x < pred_pos + window)
         x_fit = x[mask]
         y_fit = y[mask]
+
+        if len(y_fit) > 5:
+            y_fit = savgol_filter(y_fit, window_length=5, polyorder=2)
 
         if len(x_fit) < 5:
             return pred_pos

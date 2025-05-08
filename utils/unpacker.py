@@ -14,7 +14,7 @@ from matplotlib.figure import Figure
 
 class Unpacker:
 
-    def __init__(self, file_name: str, n_bins: int = 210) -> None:
+    def __init__(self, file_name: str, n_bins: int = 210, bad_crystals: list = []) -> None:
         '''
         :file_name: input file name. It has to be inside the data folder
         which has to contain both file_in.txt and file_in.root.
@@ -23,6 +23,8 @@ class Unpacker:
 
         self.file_name = file_name
         self.n_bins = n_bins
+
+        self.bad_crystals = bad_crystals
 
     def make(self, is_y_data: str = True):
         '''
@@ -73,7 +75,7 @@ class Unpacker:
             # if is an histogram
             if h_title.startswith('fh'):
 
-                if h_title.startswith('fh2'):
+                if h_title.startswith('fh1'):
 
                     crystal_id = int(h_title[23:])
 
@@ -81,9 +83,8 @@ class Unpacker:
 
                     crystal_id = int(h_title[22:])
 
-
-                # if crystal_id > 2544:
-                #   continue
+                if self.bad_crystals.count(crystal_id) > 0:
+                    continue
 
                 histo = file.Get(h_title)
 
@@ -106,8 +107,8 @@ class Unpacker:
         for line in data:
             crystal_id = line[0]
 
-            # if crystal_id > 2544:
-            #   continue
+            if self.bad_crystals.count(crystal_id) > 0:
+                continue
 
             mean_1 = line[1]
             mean_2 = line[3]

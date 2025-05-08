@@ -33,13 +33,12 @@ class Test:
         This plot will represent some of the x_data examples with the predicted
         peaks and the true peaks
         '''
-        fig, axs = plt.subplots(4, 3)
+        fig, axs = plt.subplots(5, 5)
         plt.subplots_adjust(wspace=0.5, hspace=0.5)
 
         for ax in axs.flatten():
             i = np.random.randint(0, len(self.x_test))
             x = self.x_test[i]
-            
 
             ax.plot(self.calibration.bins, x)
             ax.vlines(self.y_pred[i][0], 0, max(x),
@@ -52,9 +51,9 @@ class Test:
                 y = self.y_test[i]
 
                 ax.vlines(y[0], 0, max(x),
-                        linestyle='--', color='green')
+                          linestyle='--', color='green')
                 ax.vlines(y[1], 0, max(x),
-                        linestyle='--', color='red')
+                          linestyle='--', color='red')
 
             ax.set_yticks([])
             ax.set_xticks([])
@@ -92,5 +91,5 @@ class Test:
         for i in [0, 1]:
             ax.hist2d(self.y_pred[:, i], self.y_test[:, i], bins=(
                 np.linspace(0, 1, 20), np.linspace(0, 1, 20)))
-        
+
         plt.show()
