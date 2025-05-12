@@ -54,14 +54,15 @@ class Calibration:
         if np.any(self.x):
             self.n_input_neurons = len(x[0])
             self.bins = np.linspace(0, 1, self.n_input_neurons)
+            # Normalize x-data
+            self.x = self.x / np.max(self.x, axis=1, keepdims=True)
         else:
             self.bins = np.linspace(0, 1, 250)
 
         self.norm = norm
         self.epochs = epochs
 
-        # Normalize x-data
-        self.x = self.x / np.max(self.x, axis=1, keepdims=True)
+        
 
     def load_model(self, model_path: str = 'model.keras'):
         self.model = load_model(model_path)
@@ -170,11 +171,11 @@ class Calibration:
 
     def predict_value(self, x: np.ndarray) -> np.ndarray:
 
-        # Normalize the data
-        x = x / np.max(x, axis=1, keepdims=True)
-
         if len(x.shape) == 1:  # just predict over one point
             x = np.expand_dims(x, axis=0)
+
+        # Normalize the data
+        x = x / np.max(x, axis=1, keepdims=True)
 
         y_pred = self.model.predict(x, verbose=False)
         y_pred_refined = np.zeros_like(y_pred)

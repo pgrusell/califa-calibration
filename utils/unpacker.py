@@ -50,7 +50,8 @@ class Unpacker:
         # Save new x-data values in the db
         for i, (key, val) in enumerate(self.db.items()):
             self.db[key]['x-data'] = self.x_data[i]
-            self.db[key]['y-data'] = self.y_data[i]
+            if is_y_data:
+                self.db[key]['y-data'] = self.y_data[i]
 
     def _get_file_paths(self, is_y_data: str = True) -> None:
         '''
@@ -99,8 +100,9 @@ class Unpacker:
                 x = []
                 count = []
 
+                maxBins = np.min([histo.GetNbinsX(), 2000])
                 # for i in range(1, int(histo.GetNbinsX())):
-                for i in range(1, 2000):
+                for i in range(1, maxBins):
                     x.append(histo.GetBinCenter(i))
                     count.append(histo.GetBinContent(i))
 
