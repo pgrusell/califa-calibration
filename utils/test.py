@@ -12,7 +12,7 @@ bad_crystals = [
 ]
 
 # Unpack the data from the data directory
-u = unpacker.Unpacker("calData", bad_crystals=bad_crystals)
+u = unpacker.Unpacker("OutputFile_cal20250510_Co60", bad_crystals=bad_crystals)
 u.make(True)
 
 x_data = u.x_data
@@ -20,7 +20,7 @@ y_data = u.y_data
 norm = u.norm
 
 # Create the NN
-epochs = 85
+epochs = 70
 cal = calibrate_NN.Calibration(x_data, y_data, norm, epochs)
 cal.make()
 

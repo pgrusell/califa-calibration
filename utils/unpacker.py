@@ -91,12 +91,16 @@ class Unpacker:
                 if self.bad_crystals.count(crystal_id) > 0:
                     continue
 
+                if crystal_id > 2544:
+                    continue
+
                 histo = file.Get(h_title)
 
                 x = []
                 count = []
 
-                for i in range(1, int(histo.GetNbinsX())):
+                # for i in range(1, int(histo.GetNbinsX())):
+                for i in range(1, 2000):
                     x.append(histo.GetBinCenter(i))
                     count.append(histo.GetBinContent(i))
 
@@ -113,6 +117,9 @@ class Unpacker:
             crystal_id = line[0]
 
             if self.bad_crystals.count(crystal_id) > 0:
+                continue
+
+            if crystal_id > 2544:
                 continue
 
             mean_1 = line[1]

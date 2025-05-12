@@ -33,7 +33,7 @@ class Test:
         This plot will represent some of the x_data examples with the predicted
         peaks and the true peaks
         '''
-        fig, axs = plt.subplots(5, 5)
+        fig, axs = plt.subplots(3, 3)
         plt.subplots_adjust(wspace=0.5, hspace=0.5)
 
         for ax in axs.flatten():

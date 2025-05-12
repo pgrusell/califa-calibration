@@ -32,9 +32,11 @@ def peak_loss(y_true, y_pred):
     sorted_true = tf.sort(y_true, axis=1)
     sorted_pred = tf.sort(y_pred, axis=1)
     error = sorted_true - sorted_pred
-    return tf.reduce_mean(tf.where(tf.abs(error) < 0.05,
-                                   0.5 * tf.square(error),
-                                   0.05 * (tf.abs(error) - 0.025)))
+    penalty = tf.reduce_mean(tf.where(tf.abs(error) < 0.05,
+                                      0.5 * tf.square(error),
+                                      0.05 * (tf.abs(error) - 0.025)))
+    order_penalty = tf.reduce_mean(tf.nn.relu(sorted_pred[:, 0] - sorted_pred[:, 1]))
+    return penalty + 0.1 * order_penalty
 
 
 class Calibration:
@@ -76,7 +78,13 @@ class Calibration:
             LeakyReLU(),
             MaxPooling1D(pool_size=2),
             LSTM(64, return_sequences=True),
-            Flatten(),
+            BatchNormalization(),
+            LeakyReLU(),
+            Conv1D(64, kernel_size=3, padding='same'),
+            BatchNormalization(),
+            LeakyReLU(),
+            MaxPooling1D(pool_size=2),
+            LSTM(32),
             Dense(128), LeakyReLU(), BatchNormalization(),
             Dense(64), LeakyReLU(), BatchNormalization(),
             Dense(2)
