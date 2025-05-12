@@ -47,6 +47,11 @@ class Unpacker:
         # Get the final datasets (and the un-normalization parameters)
         self._normalize_data(is_y_data)
 
+        # Save new x-data values in the db
+        for i, (key, val) in enumerate(self.db.items()):
+            self.db[key]['x-data'] = self.x_data[i]
+            self.db[key]['y-data'] = self.y_data[i]
+
     def _get_file_paths(self, is_y_data: str = True) -> None:
         '''
         This method finds the absolute path of the .root and .txt file with

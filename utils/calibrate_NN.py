@@ -57,6 +57,9 @@ class Calibration:
         self.norm = norm
         self.epochs = epochs
 
+        # Normalize x-data
+        self.x = self.x / np.max(self.x, axis=1, keepdims=True)
+
     def load_model(self, model_path: str = 'model.keras'):
         self.model = load_model(model_path)
 
