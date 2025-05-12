@@ -20,7 +20,7 @@ y_data = u.y_data
 norm = u.norm
 
 # Create the NN
-epochs = 70
+epochs = 150
 cal = calibrate_NN.Calibration(x_data, y_data, norm, epochs)
 cal.make()
 
@@ -28,18 +28,22 @@ cal.make()
 test = test_NN.Test(cal, cal.x_test, cal.y_test)
 test.make_test()
 
-# Try on bad crystals
-u = unpacker.Unpacker("calData")
+y_pred = cal.predict_value(x_data)
+
+# Predict (also with bad crystals)
+
+u = unpacker.Unpacker("OutputFile_cal20250510_Co60")
 u.make(True)
 
-x = u.db[887]['x-data']
-y = u.db[887]['y-data']
+for i in range(len(x_data)):
 
-fig, ax = plt.subplots()
+    x = x_data[i]
+    y = y_pred[i]
 
-ax.plot(u.common_bins, x)
+    fig, ax = plt.subplots()
+    ax.plot(u.common_bins, x)
+    ax.vlines(y[0], 0, max(x), linestyles='--', color='gray')
+    ax.vlines(y[1], 0, max(x), linestyles='--', color='gray')
 
-yp = cal.predict_value(x)
-
-ax.vlines(y[0], 0, max(x), linestyle='--', color='green')
-ax.vlines(y[1], 0, max(x), linestyle='--', color='red')
+    plt.savefig(f'../results/crystal_{i}.pdf')
+    plt.close(fig)

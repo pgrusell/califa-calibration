@@ -19,8 +19,8 @@ centroids in the same units as they are in CALIFA.
 
 import keras
 from keras.models import Sequential, load_model
-from keras.layers import Conv1D, MaxPooling1D, Flatten, Dense, BatchNormalization, LeakyReLU, Input, LSTM
-from keras.callbacks import ReduceLROnPlateau
+from keras.layers import Conv1D, MaxPooling1D, Dense, BatchNormalization, LeakyReLU, Input, LSTM, Dropout
+from keras.callbacks import ReduceLROnPlateau, EarlyStopping
 import numpy as np
 import tensorflow as tf
 from scipy.optimize import curve_fit
@@ -35,7 +35,8 @@ def peak_loss(y_true, y_pred):
     penalty = tf.reduce_mean(tf.where(tf.abs(error) < 0.05,
                                       0.5 * tf.square(error),
                                       0.05 * (tf.abs(error) - 0.025)))
-    order_penalty = tf.reduce_mean(tf.nn.relu(sorted_pred[:, 0] - sorted_pred[:, 1]))
+    order_penalty = tf.reduce_mean(tf.nn.relu(
+        sorted_pred[:, 0] - sorted_pred[:, 1]))
     return penalty + 0.1 * order_penalty
 
 
@@ -54,7 +55,7 @@ class Calibration:
             self.n_input_neurons = len(x[0])
             self.bins = np.linspace(0, 1, self.n_input_neurons)
         else:
-            self.bins = np.linspace(0, 1, 210)
+            self.bins = np.linspace(0, 1, 250)
 
         self.norm = norm
         self.epochs = epochs
@@ -73,20 +74,31 @@ class Calibration:
     def _build_model(self):
         model = Sequential([
             Input(shape=(self.n_input_neurons, 1)),
-            Conv1D(32, kernel_size=5, padding='same'),
+
+            Conv1D(64, kernel_size=5, padding='same'),
             BatchNormalization(),
             LeakyReLU(),
+            Dropout(0.05),
             MaxPooling1D(pool_size=2),
+
             LSTM(64, return_sequences=True),
             BatchNormalization(),
             LeakyReLU(),
-            Conv1D(64, kernel_size=3, padding='same'),
+            Dropout(0.05),
+
+            Conv1D(128, kernel_size=3, padding='same'),
             BatchNormalization(),
             LeakyReLU(),
+            Dropout(0.05),
             MaxPooling1D(pool_size=2),
+
             LSTM(32),
-            Dense(128), LeakyReLU(), BatchNormalization(),
-            Dense(64), LeakyReLU(), BatchNormalization(),
+            BatchNormalization(),
+            LeakyReLU(),
+            Dropout(0.05),
+
+            Dense(128), LeakyReLU(), BatchNormalization(), Dropout(0.2),
+            Dense(64), LeakyReLU(), BatchNormalization(), Dropout(0.2),
             Dense(2)
         ])
 
@@ -115,9 +127,12 @@ class Calibration:
     def train_model(self, x_train: np.ndarray, y_train: np.ndarray, epochs: int, model_path: str = 'model.keras'):
 
         reduce_lr = ReduceLROnPlateau(
-            monitor='loss', factor=0.1, patience=5, min_lr=1e-6)
+            monitor='loss', factor=0.1, patience=10, min_lr=1e-6)
 
-        self.model.fit(x_train, y_train, epochs=epochs,
+        early_stop = EarlyStopping(
+            monitor='loss', patience=20, restore_best_weights=True)
+
+        self.model.fit(self.x_train, self.y_train, epochs=self.epochs,
                        batch_size=32, callbacks=[reduce_lr])
 
         self.model.save(model_path)
@@ -154,6 +169,9 @@ class Calibration:
         ])
 
     def predict_value(self, x: np.ndarray) -> np.ndarray:
+
+        # Normalize the data
+        x = x / np.max(x, axis=1, keepdims=True)
 
         if len(x.shape) == 1:  # just predict over one point
             x = np.expand_dims(x, axis=0)

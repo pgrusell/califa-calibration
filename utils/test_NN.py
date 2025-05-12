@@ -33,7 +33,7 @@ class Test:
         This plot will represent some of the x_data examples with the predicted
         peaks and the true peaks
         '''
-        fig, axs = plt.subplots(3, 3)
+        fig, axs = plt.subplots(5, 5)
         plt.subplots_adjust(wspace=0.5, hspace=0.5)
 
         for ax in axs.flatten():
@@ -45,7 +45,7 @@ class Test:
                       linestyle='--', color='grey')
             ax.vlines(self.y_pred[i][1], 0, max(x),
                       linestyle='--', color='grey')
-
+            '''
             if np.any(self.y_test):
 
                 y = self.y_test[i]
@@ -57,6 +57,7 @@ class Test:
 
             ax.set_yticks([])
             ax.set_xticks([])
+            '''
 
         plt.show()
 

@@ -14,7 +14,7 @@ from matplotlib.figure import Figure
 
 class Unpacker:
 
-    def __init__(self, file_name: str, n_bins: int = 210, bad_crystals: list = []) -> None:
+    def __init__(self, file_name: str, n_bins: int = 250, bad_crystals: list = []) -> None:
         '''
         :file_name: input file name. It has to be inside the data folder
         which has to contain both file_in.txt and file_in.root.

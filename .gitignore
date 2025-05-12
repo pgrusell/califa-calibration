@@ -5,4 +5,7 @@
 data/*
 
 # VS Code stuff
-__pycache__
+*__pycache__*
+
+# Results dir
+results/*

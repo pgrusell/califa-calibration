@@ -14,4 +14,3 @@ cal.load_model()
 # Show the results
 test = test_NN.Test(cal, x_data)
 test.plot_results()
-
