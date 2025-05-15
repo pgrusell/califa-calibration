@@ -14,7 +14,7 @@ from matplotlib.figure import Figure
 
 class Unpacker:
 
-    def __init__(self, file_name: str, n_bins: int = 250, bad_crystals: list = []) -> None:
+    def __init__(self, file_name: str, n_bins: int = 250, bad_crystals: list = [], min_bins: int = 1, max_bins: int = 2000, noise=False) -> None:
         '''
         :file_name: input file name. It has to be inside the data folder
         which has to contain both file_in.txt and file_in.root.
@@ -23,6 +23,11 @@ class Unpacker:
 
         self.file_name = file_name
         self.n_bins = n_bins
+
+        self.min_bins = min_bins
+        self.max_bins = max_bins
+
+        self.noise = noise
 
         self.bad_crystals = bad_crystals
 
@@ -100,9 +105,9 @@ class Unpacker:
                 x = []
                 count = []
 
-                maxBins = np.min([histo.GetNbinsX(), 2000])
+                maxBins = np.min([histo.GetNbinsX(), self.max_bins])
                 # for i in range(1, int(histo.GetNbinsX())):
-                for i in range(1, maxBins):
+                for i in range(self.min_bins, maxBins):
                     x.append(histo.GetBinCenter(i))
                     count.append(histo.GetBinContent(i))
 
@@ -155,7 +160,12 @@ class Unpacker:
             # Create an interpolation function
             f_interp = sc.interpolate.interp1d(bins_norm, counts)
 
-            x_data[i][:] = np.array([f_interp(bini) for bini in common_bins])
+            if self.noise:
+                x_data[i][:] = np.array([f_interp(
+                    bini) + np.random.normal(0, 2*np.sqrt(abs(f_interp(bini)))) for bini in common_bins])
+            else:
+                x_data[i][:] = np.array([f_interp(bini)
+                                        for bini in common_bins])
             norm[i][:] = bins_min, bins_max  # store for un-normalization
 
             if is_y_data:
